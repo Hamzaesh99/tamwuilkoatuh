@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>نجاح المصادقة - تمويلك</title>
+  <style>
+    /* ---------- Reset & Fonts ---------- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
+    body {
+      font-family: 'Tajawal', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #40E0D0 0%, #ffffff 100%);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #333;
+      direction: rtl;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+      padding: 40px 25px;
+      text-align: center;
+      max-width: 360px;
+      width: 90%;
+      animation: fadeIn 0.6s ease-out;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: #40E0D0;
+    }
+    .success-icon {
+      margin: 0 auto 25px;
+      width: 80px;
+      height: 80px;
+      background-color: rgba(64, 224, 208, 0.15);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .success-icon svg {
+      width: 40px;
+      height: 40px;
+      fill: #40E0D0;
+    }
+    .loader {
+      margin: 0 auto 25px;
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #40E0D0;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    h1 {
+      font-size: 1.8rem;
+      color: #40E0D0;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+    p {
+      font-size: 1.1rem;
+      margin-bottom: 25px;
+      line-height: 1.5;
+    }
+    .btn {
+      display: inline-block;
+      padding: 14px 28px;
+      background-color: #40E0D0;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all 0.3s;
+      margin: 8px;
+      box-shadow: 0 4px 10px rgba(64, 224, 208, 0.3);
+    }
+    .btn:hover {
+      background-color: #33c7b2;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(64, 224, 208, 0.4);
+    }
+    .btn-close {
+      background-color: #666;
+      box-shadow: 0 4px 10px rgba(102, 102, 102, 0.3);
+    }
+    .btn-close:hover {
+      background-color: #555;
+      box-shadow: 0 6px 15px rgba(102, 102, 102, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="loader" id="loader"></div>
+    <div class="success-icon" id="successIcon" style="display: none;">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+      </svg>
+    </div>
+    <h1 id="authTitle">تم تسجيل الدخول بنجاح!</h1>
+    <p id="authMessage">أهلاً بك في تطبيق تمويلك! تم تسجيل دخولك بنجاح ويمكنك الآن الاستمتاع بكافة خدمات التطبيق. نتمنى لك تجربة مميزة.</p>
+
+    <a
+      class="btn"
+      href="com.Tamwuilkprojict.tamwuilk://login-callback"
+      target="_self"
+      id="returnToApp"
+    >
+      العودة للتطبيق
+    </a>
+
+    <a
+      class="btn btn-close"
+      href="javascript:void(0);"
+      target="_self"
+      id="closeWindow"
+    >
+      إغلاق النافذة
+    </a>
+  </div>
+
+  <script>
+    // تأكّد من تطابق الـ scheme مع ما في AndroidManifest وInfo.plist
+    const deepLink = 'com.Tamwuilkprojict.tamwuilk://login-callback';
+    
+    // إضافة معلمة للتوجيه المباشر إلى الشاشة الرئيسية
+    const redirectToHome = true;
+    
+    // استخراج معلمات URL للتحقق من وجود رمز المصادقة أو رسالة خطأ
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    const error = urlParams.get('error');
+    const errorDescription = urlParams.get('error_description');
+    const errorCode = urlParams.get('error_code');
+    
+    // التحقق من وجود خطأ في الاستجابة (سواء كان خطأ صريح أو خطأ 500 أو أي خطأ آخر)
+    if (error || window.location.href.includes('unexpected_failure') || window.location.href.includes('error=500')) {
+      document.getElementById('authTitle').textContent = 'حدث خطأ في المصادقة';
+      document.getElementById('authMessage').textContent = errorDescription || 'يرجى التحقق من إعدادات المصادقة وعناوين إعادة التوجيه';
+      document.getElementById('loader').style.display = 'none';
+    }
+    
+    // إضافة معلمات إضافية للرابط العميق إذا كان هناك رمز مصادقة أو خطأ
+    let deepLinkWithParams = deepLink;
+    if (code) {
+      deepLinkWithParams = `${deepLink}?code=${encodeURIComponent(code)}&redirect_to_home=${redirectToHome}`;
+    } else if (error || window.location.href.includes('unexpected_failure') || window.location.href.includes('error=500')) {
+      // إرسال معلومات الخطأ إلى التطبيق
+      const errorMsg = errorDescription || 'خطأ غير متوقع في المصادقة';
+      deepLinkWithParams = `${deepLink}?error=${encodeURIComponent(error || 'unexpected_failure')}&error_description=${encodeURIComponent(errorMsg)}&redirect_to_home=${redirectToHome}`;
+    } else {
+      // حالة المصادقة غير معروفة - إضافة معلمة للتطبيق للتعامل معها
+      deepLinkWithParams = `${deepLink}?error=unknown_auth_state&error_description=${encodeURIComponent('حالة المصادقة غير معروفة')}&redirect_to_home=${redirectToHome}`;
+    }
+    
+    // إضافة مستمعي أحداث للأزرار
+    document.getElementById('returnToApp').addEventListener('click', function(e) {
+      e.preventDefault();
+      window.location.href = deepLinkWithParams;
+    });
+    
+    document.getElementById('closeWindow').addEventListener('click', function(e) {
+      e.preventDefault();
+      // محاولة إغلاق النافذة
+      window.close();
+      
+      // في حالة فشل إغلاق النافذة (قد يحدث في بعض المتصفحات)
+      // نعرض رسالة للمستخدم
+      setTimeout(() => {
+        document.getElementById('authTitle').textContent = 'تم الانتهاء';
+        document.getElementById('authMessage').textContent = 'يمكنك إغلاق هذه النافذة والعودة إلى التطبيق';
+      }, 300);
+    });
+    
+    // وظيفة لإظهار أيقونة النجاح وإخفاء مؤشر التحميل
+    function showSuccessIcon() {
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('successIcon').style.display = 'flex';
+    }
+    
+    // محاولة فتح التطبيق تلقائياً بعد تحميل الصفحة
+    window.addEventListener('load', () => {
+      // تحديث واجهة المستخدم بناءً على حالة المصادقة
+      if (error || window.location.href.includes('unexpected_failure') || window.location.href.includes('error=500')) {
+        // تم تحديث النص بالفعل في الشرط السابق
+        document.getElementById('loader').style.display = 'none';
+      } else if (code) {
+        document.getElementById('authTitle').textContent = 'تم تسجيل الدخول بنجاح!';
+        document.getElementById('authMessage').textContent = 'أهلاً بك في تطبيق تمويلك! تم تسجيل دخولك بنجاح ويمكنك الآن الاستمتاع بكافة خدمات التطبيق. نتمنى لك تجربة مميزة.';
+        // إظهار أيقونة النجاح بعد فترة قصيرة
+        setTimeout(showSuccessIcon, 800);
+      } else {
+        document.getElementById('authTitle').textContent = 'حالة المصادقة غير معروفة';
+        document.getElementById('authMessage').textContent = 'جاري التوجيه إلى التطبيق...';
+        document.getElementById('loader').style.display = 'none';
+        
+        // إضافة نصائح إضافية للمستخدم مباشرة
+        const helpText = document.createElement('div');
+        helpText.style.marginTop = '15px';
+        helpText.style.fontSize = '0.85rem';
+        helpText.style.color = '#666';
+        helpText.innerHTML = 'نصائح: <br>• تأكد من تثبيت التطبيق <br>• تأكد من تكوين URL المصادقة بشكل صحيح <br>• حاول إعادة تشغيل التطبيق';
+        document.querySelector('.card').appendChild(helpText);
+      }
+
+      // تأخير بمقدار 3 ثوانٍ قبل التوجيه إلى التطبيق
+      setTimeout(() => {
+        try {
+          // تحديث رسالة التوجيه
+          if (code) {
+            document.getElementById('authMessage').textContent = 'جاري التوجيه إلى التطبيق...';
+          }
+          
+          // محاولة فتح التطبيق باستخدام الرابط العميق
+          console.log('توجيه إلى:', deepLinkWithParams);
+          window.location.href = deepLinkWithParams;
+          
+          // بعد محاولة التوجيه، نضع مؤقتًا آخر للتحقق مما إذا كان المستخدم لا يزال في الصفحة
+          setTimeout(() => {
+            // إذا كان المستخدم لا يزال في الصفحة، نعرض رسالة إضافية
+            if (code) {
+              // إذا كان هناك رمز مصادقة، نعرض رسالة نجاح
+              document.getElementById('authMessage').textContent = 
+                'تم تسجيل الدخول بنجاح! إذا لم يتم فتح التطبيق تلقائيًا، يرجى النقر على زر "العودة للتطبيق"';
+              // إظهار أيقونة النجاح إذا لم تكن ظاهرة بالفعل
+              showSuccessIcon();
+            } else {
+              document.getElementById('authMessage').textContent = 
+                'إذا لم يتم فتح التطبيق تلقائيًا، يرجى النقر على زر "العودة للتطبيق"';
+              document.getElementById('loader').style.display = 'none';
+            }
+            
+            // إضافة نصائح إضافية للمستخدم إذا لم تكن موجودة بالفعل
+            if (!document.querySelector('.card div[style*="margin-top: 15px"]')) {
+              const helpText = document.createElement('div');
+              helpText.style.marginTop = '15px';
+              helpText.style.fontSize = '0.85rem';
+              helpText.style.color = '#666';
+              helpText.innerHTML = 'نصائح: <br>• تأكد من تثبيت التطبيق <br>• تأكد من تكوين URL المصادقة بشكل صحيح <br>• حاول إعادة تشغيل التطبيق';
+              document.querySelector('.card').appendChild(helpText);
+            }
+          }, 2000);
+        } catch (err) {
+          console.error('خطأ في التوجيه:', err);
+          document.getElementById('authTitle').textContent = 'حدث خطأ في التوجيه';
+          document.getElementById('authMessage').textContent = 
+            'حدث خطأ أثناء محاولة فتح التطبيق. يرجى النقر على زر "العودة للتطبيق"';
+          document.getElementById('loader').style.display = 'none';
+        }
+      }, 3000); // تم تغيير التأخير إلى 3 ثوانٍ بدلاً من 1 ثانية
+    });
+  </script>
+</body>
+</html>
